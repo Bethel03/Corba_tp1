@@ -1,0 +1,9 @@
+module org {
+  module fimproso {
+    interface OperationBancaire {
+      double balance();
+      void depot(in double amount);
+      void retrait(in double amount);
+    };
+  };
+};

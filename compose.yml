@@ -1,0 +1,81 @@
+services:
+  corba-nameservice:
+    build:
+      context: .
+      dockerfile: Dockerfile.omni
+    image: corba-omni-base
+    container_name: corba-nameservice
+    hostname: corba-nameservice
+    command: ["omniNames", "-start", "1050", "-always", "-datadir", "/var/omninames", "-errlog", "/var/omninames/omninames.log"]
+    ports:
+      - "1050:1050"
+    volumes:
+      - omninames-log:/var/omninames
+    networks:
+      - corba-net
+
+  serveur-banque-java:
+    build:
+      context: projects/ServeurBanqueJ
+      dockerfile: Dockerfile
+    container_name: serveur-banque-java
+    depends_on:
+      - corba-nameservice
+    networks:
+      - corba-net
+    command: >
+      bash -c "
+      until exec 3<>/dev/tcp/corba-nameservice/1050; do
+        echo 'Waiting for Naming Service...';
+        sleep 1;
+      done;
+      sleep 5;
+      exec java -cp /app/build/classes org.server.CORBAServer -ORBInitialPort 1050 -ORBInitialHost corba-nameservice -ORBInitRef NameService=corbaloc::corba-nameservice:1050/NameService
+      "
+
+  client-banque-java:
+    build:
+      context: projects/ClientBanqueJ
+      dockerfile: Dockerfile
+    container_name: client-banque-java
+    depends_on:
+      - serveur-banque-java
+      - corba-nameservice
+    networks:
+      - corba-net
+    command: >
+      bash -c "
+      until exec 3<>/dev/tcp/corba-nameservice/1050; do
+        echo 'Waiting for Naming Service...';
+        sleep 1;
+      done;
+      sleep 8;
+      exec java -cp /app/build/classes org.client.CorbaClient -ORBInitialPort 1050 -ORBInitialHost corba-nameservice -ORBInitRef NameService=corbaloc::corba-nameservice:1050/NameService
+      "
+
+  client-banque-python:
+    image: corba-omni-base
+    build:
+      context: .
+      dockerfile: Dockerfile.omni
+    container_name: client-banque-python
+    depends_on:
+      - client-banque-java
+      - corba-nameservice
+    networks:
+      - corba-net
+    command: >
+      bash -c "
+      until exec 3<>/dev/tcp/corba-nameservice/1050; do
+        echo 'Waiting for Naming Service...';
+        sleep 1;
+      done;
+      sleep 12;
+      exec python /app/ClientBanqueP/CorbaClient.py
+      "
+
+networks:
+  corba-net:
+
+volumes:
+  omninames-log:
