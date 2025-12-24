@@ -2,7 +2,7 @@ services:
   corba-nameservice:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.base
     image: corba-omni-base
     container_name: corba-nameservice
     hostname: corba-nameservice
