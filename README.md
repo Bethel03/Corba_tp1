@@ -2,7 +2,7 @@
 
 Un projet de démonstration d'une application bancaire distribuée utilisant **CORBA** avec communication inter-langage (Java ↔ Python) et orchestration complète en **Docker**.
 
-> **Le meilleur du middleware distribué en un seul projet !**
+
 
 ---
 
